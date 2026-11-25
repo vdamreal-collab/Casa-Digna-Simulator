@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lar Digno 3D - Simulador Habitacional Completo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 + OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #1e293b;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Nunito', sans-serif;
+        }
+        #three-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(226, 232, 240, 0.5);
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col relative">
+
+    <!-- BARRA DE NAVEGAÇÃO DO SITE -->
+    <nav id="site-navbar" class="relative z-30 bg-slate-950/95 text-white border-b border-slate-800 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span class="font-display font-extrabold text-sm tracking-tight">Portal Moradia &amp; Cidadania</span>
+            <span class="hidden md:inline text-[11px] text-slate-400">• Edição Educativa 6º Ano</span>
+        </div>
+
+        <div class="flex items-center gap-1.5 text-xs font-bold">
+            <button id="nav-tab-game" onclick="switchSitePage('game')" class="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 transition active:scale-95">
+                🏠 Jogo 3D
+            </button>
+            <button id="nav-tab-guide" onclick="switchSitePage('guide')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition active:scale-95">
+                📘 Guia 6º Ano
+            </button>
+            <button id="nav-tab-about" onclick="switchSitePage('about')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition active:scale-95">
+                ℹ️ Sobre o Site
+            </button>
+        </div>
+    </nav>
+
+    <!-- PÁGINA 1: JOGO 3D INTERATIVO -->
+    <div id="page-game" class="relative flex-1 w-full overflow-hidden">
+
+        <!-- CANVAS 3D EM TELA CHEIA -->
+        <div id="three-container" class="absolute inset-0 z-0"></div>
+            </div>
+
+            <div class="h-7 w-px bg-slate-200 hidden sm:block"></div>
+
+            <div id="wallet-badge" class="flex items-center gap-2 bg-amber-50 border border-amber-300 px-3 py-1 rounded-xl transition-transform">
+                <span class="w-5 h-5 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shadow-sm">$</span>
+                <div>
+                    <span class="block text-[9px] uppercase font-bold text-amber-800 tracking-wider leading-none">Dinheiro da Obra</span>
+                    <span id="budget-display" class="text-base sm:text-lg font-display font-black text-amber-950 leading-tight">1.000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 Barras de Progresso Temáticas (Desktop) -->
+        <div class="pointer-events-auto bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-lg border border-slate-200/90 flex-1 max-w-2xl hidden xl:block">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Como Está a Casa (4 Áreas Principais)</span>
+                <span id="overall-status-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                    Casa Precária
+                </span>
+            </div>
+            <div class="grid grid-cols-4 gap-3">
+                <div>
+                    <div class="flex justify-between text-[11px] font-bold text-slate-700 mb-0.5">
+                        <span>⚡ Eletricidade</span>
+                        <span id="val-elec">10%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div id="bar-elec" class="bg-amber-500 h-2 rounded-full transition-all duration-500" style="width: 10%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[11px] font-bold text-slate-700 mb-0.5">
+                        <span>💧 Saneamento</span>
+                        <span id="val-san">10%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div id="bar-san" class="bg-sky-500 h-2 rounded-full transition-all duration-500" style="width: 10%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[11px] font-bold text-slate-700 mb-0.5">
+                        <span>📐 Espaço</span>
+                        <span id="val-space">10%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div id="bar-space" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 10%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[11px] font-bold text-slate-700 mb-0.5">
+                        <span>🛋️ Conforto</span>
+                        <span id="val-comfort">10%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div id="bar-comfort" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 10%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Ação: Tempestade, Desfazer Última, Som, Resetar -->
+        <div class="pointer-events-auto flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl shadow-lg border border-slate-200/90">
+            <button id="btn-rain-test" onclick="triggerWeatherTest()" class="px-2.5 py-2 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold text-xs transition flex items-center gap-1.5 active:scale-95">
+                <span>⛈️</span>
+                <span class="hidden sm:inline">Testar Tempestade & Chuva</span>
+            </button>
+
+            <button id="btn-undo" onclick="undoLastAction()" title="Desfazer Última Ação" class="px-2.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs transition flex items-center gap-1 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+                <span>↩️</span>
+                <span class="hidden md:inline">Desfazer Última</span>
+            </button>
+
+            <button id="btn-mute" onclick="toggleAudio()" title="Alternar Áudio" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition active:scale-95">
+                <svg id="icon-sound-on" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <svg id="icon-sound-off" class="w-4 h-4 hidden text-red-500" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                </svg>
+            </button>
+
+            <button onclick="resetGame()" title="Resetar Jogo" class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-bold text-xs transition flex items-center gap-1 active:scale-95">
+                <span>🔄</span>
+                <span class="hidden md:inline">Resetar</span>
+            </button>
+
+            <button onclick="openEvaluationModal()" title="Ver Avaliação da Casa" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition flex items-center gap-1 active:scale-95">
+                <span>📋</span>
+                <span class="hidden sm:inline">Avaliar Casa</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- BARRAS COMPACTAS PARA TELAS < XL -->
+    <div class="relative z-20 xl:hidden px-3 pointer-events-none">
+        <div class="pointer-events-auto bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow border border-slate-200/90 grid grid-cols-4 gap-2">
+            <div>
+                <div class="flex justify-between text-[10px] font-bold text-slate-700"><span>⚡ Elét.</span><span id="val-elec-m">10%</span></div>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full mt-0.5"><div id="bar-elec-m" class="bg-amber-500 h-1.5 rounded-full transition-all" style="width:10%"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between text-[10px] font-bold text-slate-700"><span>💧 San.</span><span id="val-san-m">10%</span></div>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full mt-0.5"><div id="bar-san-m" class="bg-sky-500 h-1.5 rounded-full transition-all" style="width:10%"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between text-[10px] font-bold text-slate-700"><span>📐 Esp.</span><span id="val-space-m">10%</span></div>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full mt-0.5"><div id="bar-space-m" class="bg-indigo-600 h-1.5 rounded-full transition-all" style="width:10%"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between text-[10px] font-bold text-slate-700"><span>🛋️ Conf.</span><span id="val-comfort-m">10%</span></div>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full mt-0.5"><div id="bar-comfort-m" class="bg-emerald-500 h-1.5 rounded-full transition-all" style="width:10%"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTÕES DE VISÃO RÁPIDA DA CÂMERA 3D -->
+    <div class="fixed z-20 left-3 sm:left-4 bottom-[47vh] lg:bottom-4 flex flex-wrap items-center gap-1.5 bg-slate-900/85 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/80 shadow-xl">
+        <button onclick="setCameraPreset('overview')" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] transition active:scale-95">
+            🏠 Visão Geral
+        </button>
+        <button onclick="setCameraPreset('interior')" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] transition active:scale-95">
+            🛋️ Interior
+        </button>
+        <button onclick="setCameraPreset('yard')" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] transition active:scale-95">
+            💧 Quintal & Saneamento
+        </button>
+    </div>
+
+    <!-- PAINEL LATERAL DIREITO DE UPGRADES (8 MÓDULOS + GLOSSÁRIO RÁPIDO 6º ANO) -->
+    <aside class="fixed z-20 bottom-0 left-0 right-0 lg:top-20 lg:bottom-4 lg:left-auto lg:right-4 lg:w-[445px] bg-white/95 backdrop-blur-md rounded-t-3xl lg:rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col max-h-[46vh] lg:max-h-none transition-all">
+        
+        <!-- Cabeçalho do Painel + Botão Vistoria Final -->
+        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0 bg-emerald-50/40">
+            <div>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-base font-display font-extrabold text-slate-900">Melhorias da Casa</h2>
+                    <span id="panel-score-pill" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-700">Nota: 10/100</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Clique no botão <strong>Nível 1</strong> ou <strong>Nível 2</strong> em cada item (<span id="upgrades-count-badge" class="font-bold text-amber-700">0/8</span>)</p>
+            </div>
+            <button onclick="openEvaluationModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-extrabold text-xs shadow-md shadow-emerald-600/30 ring-2 ring-emerald-300 transition active:scale-95 flex items-center gap-1.5 shrink-0">
+                <span>📋 Vistoria Final</span>
+            </button>
+        </div>
+
+        <!-- Guia Rápido de Como Comprar -->
+        <div class="px-3.5 py-1.5 bg-amber-50 border-b border-amber-200/80 text-[11px] text-amber-950 flex items-center justify-between gap-2 shrink-0">
+            <span>👉 <strong>Onde clicar:</strong> escolha uma aba ou clique na casa 3D e aperte no card de <strong>Nível 1</strong> ou <strong>Nível 2</strong>.</span>
+        </div>
+
+        <!-- Abas de Filtro por Pilar -->
+        <div id="category-tabs" class="px-3 py-2 bg-slate-50/90 border-b border-slate-200/80 flex items-center gap-1 overflow-x-auto shrink-0">
+            <!-- Renderizado via JS -->
+        </div>
+
+        <!-- Glossário Rápido do 6º Ano (explicações curtas para estudar e decidir) -->
+        <div id="glossary-box" class="px-3.5 py-2 bg-sky-50/90 border-b border-sky-200/80 text-[11px] text-sky-950 shrink-0">
+            <div class="flex items-center justify-between gap-2">
+                <span class="font-extrabold text-sky-900 flex items-center gap-1">
+                    <span>📘 Dicionário Rápido (6º Ano):</span>
+                </span>
+                <button onclick="cycleGlossaryTerm()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-sky-200/80 hover:bg-sky-300 text-sky-950 transition active:scale-95">
+                    Próximo termo →
+                </button>
+            </div>
+            <p id="glossary-text" class="mt-1 leading-snug text-sky-900">
+                <strong>Disjuntor:</strong> é como um "guarda" da energia elétrica. Se os fios esquentarem demais, ele desliga sozinho para evitar choques e fogo.
+            </p>
+        </div>
+
+        <!-- Lista de Módulos Filtrados -->
+        <div id="shop-categories" class="p-3 overflow-y-auto space-y-2.5 flex-1">
+            <!-- Renderizado via JS -->
+        </div>
+    </aside>
+
+    <!-- MODAL DE VISTORIA FINAL (LINGUAGEM 6º ANO) -->
+    <div id="evaluation-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div class="text-center">
+                <div id="eval-icon" class="w-16 h-16 mx-auto rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mb-2 shadow-inner">
+                    🏡
+                </div>
+                <span class="text-[11px] font-bold uppercase tracking-widest text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
+                    Relatório de Vistoria • Moradia Segura e Saudável
+                </span>
+                <h2 id="eval-title" class="text-2xl font-display font-black text-slate-900 mt-2">
+                    Resultado da Vistoria
+                </h2>
+                <p id="eval-subtitle" class="text-xs sm:text-sm text-slate-600 mt-1">
+                    Veja como ficou a casa nos 4 assuntos principais usando suas 1.000 moedas.
+                </p>
+            </div>
+
+            <!-- Resumo dos 4 Pilares -->
+            <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-amber-900">⚡ Energia Elétrica</div>
+                    <div id="eval-elec" class="text-xl font-display font-black text-amber-700 mt-0.5">0%</div>
+                </div>
+                <div class="bg-sky-50 border border-sky-200 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-sky-900">💧 Saneamento</div>
+                    <div id="eval-san" class="text-xl font-display font-black text-sky-700 mt-0.5">0%</div>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-indigo-900">📐 Espaço & Paredes</div>
+                    <div id="eval-space" class="text-xl font-display font-black text-indigo-700 mt-0.5">0%</div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-emerald-900">🛋️ Conforto & Ar</div>
+                    <div id="eval-comfort" class="text-xl font-display font-black text-emerald-700 mt-0.5">0%</div>
+                </div>
+            </div>
+
+            <!-- Nota Geral & Orçamento -->
+            <div class="mt-3 bg-slate-900 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs text-slate-400 block">Nota Geral da Casa</span>
+                    <span id="eval-total-score" class="text-2xl font-display font-black text-emerald-400">0 / 100</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 block">Moedas que Sobraram</span>
+                    <span id="eval-remaining-coins" class="text-base font-bold text-amber-400">0 moedas</span>
+                </div>
+            </div>
+
+            <!-- Diagnóstico Detalhado por Módulo -->
+            <div class="mt-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">O que o Vistoriador Encontrou (8 Partes da Casa)</h3>
+                <ul id="eval-feedback-list" class="space-y-1.5 text-xs text-slate-700"></ul>
+            </div>
+
+            <div class="mt-5 flex flex-col sm:flex-row gap-2.5">
+                <button onclick="closeEvaluationModal()" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-sm transition">
+                    Voltar e Continuar Reformando
+                </button>
+                <button onclick="resetGame(); closeEvaluationModal();" class="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow transition">
+                    Jogar de Novo (1.000 Moedas)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    </div> <!-- Fim #page-game -->
+
+    <!-- PÁGINA 2: GUIA EDUCATIVO DO 6º ANO -->
+    <section id="page-guide" class="hidden flex-1 w-full overflow-y-auto bg-slate-100 p-4 sm:p-8">
+        <div class="max-w-4xl mx-auto space-y-6 pb-10">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-sky-100 text-sky-900">
+                    Material de Apoio • 6º Ano
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-display font-black text-slate-900 mt-2">
+                    Por que cuidar da moradia faz tanta diferença?
+                </h2>
+                <p class="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Uma casa digna não é só bonita: ela protege a saúde, evita acidentes e dá espaço para descansar, estudar e viver bem. No jogo, você tem <strong>1.000 moedas</strong> para escolher o que é mais urgente primeiro.
+                </p>
+                <div class="mt-4">
+                    <button onclick="switchSitePage('game')" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-display font-extrabold text-sm shadow transition active:scale-95">
+                        ← Voltar para a Planta Baixa 3D
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h3 class="font-display font-extrabold text-base text-slate-900">⚡ Energia Elétrica</h3>
+                    <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                        Fios desencapados e sem <strong>disjuntor</strong> podem causar choques ou curto-circuito. Proteger os fios e usar iluminação LED deixa a casa mais segura e econômica.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h3 class="font-display font-extrabold text-base text-slate-900">💧 Saneamento (4 Partes)</h3>
+                    <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                        Inclui <strong>água limpa</strong> encanada, <strong>esgoto</strong> bem direcionado (fossa, biodigestor ou rede), <strong>água da chuva</strong> com valetas/calhas e <strong>lixo</strong> bem guardado.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h3 class="font-display font-extrabold text-base text-slate-900">📐 Espaço, Paredes e Telhado</h3>
+                    <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                        Ter quarto separado dá privacidade, e consertar buracos no telhado evita goteiras e molhadeira quando chove forte.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h3 class="font-display font-extrabold text-base text-slate-900">🛋️ Ar Fresco, Piso e Conforto</h3>
+                    <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                        Trocar piso de terra por cimento ou cerâmica, abrir janelas para o ar circular e ter cama e mesa melhoram o sono, a limpeza e o bem-estar.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PÁGINA 3: SOBRE O SITE -->
+    <section id="page-about" class="hidden flex-1 w-full overflow-y-auto bg-slate-100 p-4 sm:p-8">
+        <div class="max-w-3xl mx-auto bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-4">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-100 text-emerald-900">
+                Sobre o Projeto
+            </span>
+            <h2 class="text-2xl font-display font-black text-slate-900">
+                Lar Digno 3D — Simulador Interativo
+            </h2>
+            <p class="text-sm text-slate-600 leading-relaxed">
+                Este site reúne uma maquete 3D em planta baixa com orçamento limitado (<strong>1.000 moedas</strong>), teste de chuva e tempestade, dicionário de termos adaptados ao <strong>6º ano</strong> e relatório de vistoria final.
+            </p>
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-950 space-y-1">
+                <p class="font-extrabold">Dicas rápidas para jogar no site:</p>
+                <p>• Arraste para girar a maquete 3D e use o scroll (ou pinça) para dar zoom.</p>
+                <p>• Clique em qualquer parte da casa 3D ou nos cards à direita para investir.</p>
+                <p>• Use <strong>Testar Tempestade &amp; Chuva</strong> e depois clique em <strong>Vistoria Final</strong> para ver a nota da casa.</p>
+            </div>
+            <div class="pt-2">
+                <button onclick="switchSitePage('game')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-extrabold text-sm shadow transition active:scale-95">
+                    Ir para o Jogo 3D →
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /**
+         * ============================================================================
+         * 1. ÁUDIO PROCEDURAL (WEB AUDIO API: MARTELO, MOEDAS, CHUVA, TROVÃO, FANFARRA)
+         * ============================================================================
+         */
+        let audioCtx = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            document.getElementById('icon-sound-on').classList.toggle('hidden', isMuted);
+            document.getElementById('icon-sound-off').classList.toggle('hidden', !isMuted);
+            if (!isMuted) {
+                initAudio();
+                playSound('click');
+            }
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+
+                if (type === 'build') {
+                    // Dupla batida de martelo + moeda
+                    [0, 0.09].forEach(offset => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(185, now + offset);
+                        osc.frequency.exponentialRampToValueAtTime(52, now + offset + 0.08);
+                        gain.gain.setValueAtTime(0.3, now + offset);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.09);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + offset);
+                        osc.stop(now + offset + 0.1);
+                    });
+                    const coin = audioCtx.createOscillator();
+                    const cGain = audioCtx.createGain();
+                    coin.type = 'sine';
+                    coin.frequency.setValueAtTime(987.77, now + 0.16);
+                    coin.frequency.setValueAtTime(1318.51, now + 0.23);
+                    cGain.gain.setValueAtTime(0.15, now + 0.16);
+                    cGain.gain.exponentialRampToValueAtTime(0.01, now + 0.36);
+                    coin.connect(cGain);
+                    cGain.connect(audioCtx.destination);
+                    coin.start(now + 0.16);
+                    coin.stop(now + 0.37);
+                } else if (type === 'refund') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(620, now);
+                    osc.frequency.exponentialRampToValueAtTime(320, now + 0.22);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.24);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'error') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(130, now);
+                    osc.frequency.linearRampToValueAtTime(95, now + 0.2);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.23);
+                } else if (type === 'storm') {
+                    // Chuva contínua
+                    const bufferSize = audioCtx.sampleRate * 3.8;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.value = 820;
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.01, now);
+                    gain.gain.linearRampToValueAtTime(0.15, now + 0.5);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 3.8);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    noise.start(now);
+
+                    // Trovão grave sintetizado aos 0.7s
+                    const tBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2.2, audioCtx.sampleRate);
+                    const tData = tBuffer.getChannelData(0);
+                    for (let i = 0; i < tData.length; i++) tData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.7));
+                    const thunder = audioCtx.createBufferSource();
+                    thunder.buffer = tBuffer;
+                    const lowpass = audioCtx.createBiquadFilter();
+                    lowpass.type = 'lowpass';
+                    lowpass.frequency.value = 140;
+                    const tGain = audioCtx.createGain();
+                    tGain.gain.setValueAtTime(0.55, now + 0.65);
+                    tGain.gain.exponentialRampToValueAtTime(0.01, now + 2.8);
+                    thunder.connect(lowpass);
+                    lowpass.connect(tGain);
+                    tGain.connect(audioCtx.destination);
+                    thunder.start(now + 0.65);
+                } else if (type === 'fanfare') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                        gain.gain.setValueAtTime(0.16, now + idx * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.09 + 0.45);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.09);
+                        osc.stop(now + idx * 0.09 + 0.46);
+                    });
+                } else if (type === 'click') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.frequency.setValueAtTime(540, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                }
+            } catch (e) {}
+        }
+
+        /**
+         * ============================================================================
+         * 2. AS 8 CATEGORIAS + GLOSSÁRIO DO 6º ANO (LINGUAGEM CLARA E EDUCATIVA)
+         * ============================================================================
+         */
+        const INITIAL_BUDGET = 1000;
+
+        const GLOSSARY_TERMS = [
+            {
+                term: 'Disjuntor',
+                meaning: 'é como um "guarda" da energia elétrica. Se os fios esquentarem demais, ele desliga sozinho para evitar choques e fogo.'
+            },
+            {
+                term: 'Água tratada',
+                meaning: 'é a água limpa e sem micróbios que causam doenças. Chega pelas torneiras e ajuda na higiene diária e no preparo da comida.'
+            },
+            {
+                term: 'Esgoto',
+                meaning: 'é a água suja que sai da pia, do chuveiro e do vaso sanitário. Se ficar aberta no quintal, espalha sujeira e transmite doenças.'
+            },
+            {
+                term: 'Água da chuva / enxurrada',
+                meaning: 'quando chove forte, a água escorre pelo chão e pelo telhado. Sem calhas e valetas, ela alaga o quintal e molha as paredes.'
+            },
+            {
+                term: 'Resíduos (lixo)',
+                meaning: 'são as sobras e embalagens do dia a dia. Guardar em lixeiras tampadas ou separar recicláveis evita ratos, baratas e mosquitos.'
+            },
+            {
+                term: 'Espaço e paredes',
+                meaning: 'ter quarto separado e paredes firmes dá privacidade, protege do vento e evita goteiras quando a chuva aperta.'
+            },
+            {
+                term: 'Ventilação e luz do sol',
+                meaning: 'janelas que abrem deixam o ar circular e trazem luz natural. Isso tira o mofo, deixa o ar mais fresco e ajuda a economizar luz.'
+            },
+            {
+                term: 'Conforto na casa',
+                meaning: 'ter uma cama boa para dormir, mesa para estudar ou comer e piso limpo faz a família descansar melhor e viver com mais saúde.'
+            }
+        ];
+
+        let glossaryIndex = 0;
+
+        function cycleGlossaryTerm() {
+            playSound('click');
+            glossaryIndex = (glossaryIndex + 1) % GLOSSARY_TERMS.length;
+            const item = GLOSSARY_TERMS[glossaryIndex];
+            document.getElementById('glossary-text').innerHTML = `<strong>${item.term}:</strong> ${item.meaning}`;
+        }
+
+        function setGlossaryByCategory(catId) {
+            const map = {
+                electricity: 0,
+                water: 1,
+                sewage: 2,
+                drainage: 3,
+                waste: 4,
+                space: 5,
+                ventilation: 6,
+                furniture: 7
+            };
+            if (typeof map[catId] === 'number') {
+                glossaryIndex = map[catId];
+                const item = GLOSSARY_TERMS[glossaryIndex];
+                document.getElementById('glossary-text').innerHTML = `<strong>${item.term}:</strong> ${item.meaning}`;
+            }
+        }
+
+        const PILLAR_TABS = [
+            { id: 'all', label: 'Tudo (8)' },
+            { id: 'Eletricidade', label: '⚡ Energia' },
+            { id: 'Saneamento', label: '💧 Saneamento (4)' },
+            { id: 'Espaço', label: '📐 Espaço' },
+            { id: 'Conforto', label: '🛋️ Conforto' }
+        ];
+
+        const UPGRADE_CATEGORIES = [
+            {
+                id: 'electricity',
+                pillar: 'Eletricidade',
+                name: 'Energia Elétrica e Luzes',
+                icon: '⚡',
+                highlightPos: { x: -2.2, z: -1.2, rx: 3.8, rz: 3.4 },
+                problemDesc: 'Fios soltos pendurados, emendas perigosas soltando faíscas e lâmpada fraca que fica piscando.',
+                options: [
+                    { level: 1, title: 'Disjuntores + Fios Protegidos', cost: 110, elec: 45, san: 0, space: 0, comfort: 5, desc: 'Coloca disjuntores para desligar em caso de falha e protege os fios dentro de canos próprios.' },
+                    { level: 2, title: 'Fios Embutidos + Proteção Total e LED', cost: 210, elec: 90, san: 0, space: 0, comfort: 12, desc: 'Esconde a fiação na parede com segurança extra contra choque e instala luzes LED que gastam menos energia.' }
+                ]
+            },
+            {
+                id: 'water',
+                pillar: 'Saneamento',
+                name: 'Água Limpa (Abastecimento)',
+                icon: '🚰',
+                highlightPos: { x: 4.5, z: -2.6, rx: 2.6, rz: 2.6 },
+                problemDesc: 'A família precisa carregar água em baldes e galões porque não há água encanada.',
+                options: [
+                    { level: 1, title: 'Caixa d\'Água 500L + Canos', cost: 100, elec: 0, san: 14, space: 0, comfort: 4, desc: 'Instala caixa d\'água de 500 litros no alto e leva água pelos canos até a pia e o banheiro.' },
+                    { level: 2, title: 'Caixa 1000L + Filtro e Chuveiro', cost: 190, elec: 0, san: 24, space: 0, comfort: 10, desc: 'Caixa maior de 1000 litros com filtro para ajudar na qualidade da água, torneiras firmes e chuveiro.' }
+                ]
+            },
+            {
+                id: 'sewage',
+                pillar: 'Saneamento',
+                name: 'Esgoto (Banheiro e Quintal)',
+                icon: '🚽',
+                highlightPos: { x: 3.6, z: 0.4, rx: 3.4, rz: 3.2 },
+                problemDesc: 'Água suja do esgoto corre a céu aberto no quintal e o vaso do banheiro funciona mal.',
+                options: [
+                    { level: 1, title: 'Fossa Séptica + Canos Fechados', cost: 120, elec: 0, san: 15, space: 0, comfort: 4, desc: 'Leva o esgoto por canos fechados até uma fossa no quintal, evitando contato direto com a sujeira.' },
+                    { level: 2, title: 'Biodigestor / Rede + Banheiro Completo', cost: 220, elec: 0, san: 26, space: 0, comfort: 10, desc: 'Trata melhor o esgoto com biodigestor ou ligação à rede, com ralos que bloqueiam mau cheiro e banheiro completo.' }
+                ]
+            },
+            {
+                id: 'drainage',
+                pillar: 'Saneamento',
+                name: 'Água da Chuva (Drenagem)',
+                icon: '🌧️',
+                highlightPos: { x: 0.2, z: 3.6, rx: 6.8, rz: 2.6 },
+                problemDesc: 'Quando chove, forma lama e poças no quintal e a enxurrada encosta nas paredes da casa.',
+                options: [
+                    { level: 1, title: 'Valetas para Escoar a Chuva', cost: 90, elec: 0, san: 12, space: 4, comfort: 2, desc: 'Abre valetas ao redor da casa para guiar a água da chuva e deixa o piso um pouco mais alto.' },
+                    { level: 2, title: 'Calhas no Telhado + Ralos e Calçada', cost: 170, elec: 0, san: 22, space: 8, comfort: 6, desc: 'Pega a chuva do telhado com calhas, coloca ralos no chão e faz calçada em volta para não empoçar.' }
+                ]
+            },
+            {
+                id: 'waste',
+                pillar: 'Saneamento',
+                name: 'Lixo / Resíduos da Casa',
+                icon: '♻️',
+                highlightPos: { x: 4.8, z: 3.2, rx: 2.6, rz: 2.6 },
+                problemDesc: 'Sacos de lixo rasgados ficam espalhados no quintal, atraindo moscas e bichos que trazem doenças.',
+                options: [
+                    { level: 1, title: 'Lixeiras com Tampa Firme', cost: 70, elec: 0, san: 10, space: 0, comfort: 4, desc: 'Guarda o lixo em lixeiras tampadas que dificultam o acesso de animais e insetos.' },
+                    { level: 2, title: 'Cantinho Coberto + Separação do Lixo', cost: 140, elec: 0, san: 18, space: 0, comfort: 8, desc: 'Cria um espaço coberto para separar lixo orgânico, reciclável e rejeito com mais higiene.' }
+                ]
+            },
+            {
+                id: 'space',
+                pillar: 'Espaço',
+                name: 'Espaço, Paredes e Telhado',
+                icon: '📐',
+                highlightPos: { x: -2.2, z: -0.5, rx: 5.4, rz: 4.8 },
+                problemDesc: 'É tudo num espaço apertado sem quarto separado, as paredes têm rachaduras e o telhado tem goteiras.',
+                options: [
+                    { level: 1, title: 'Tapa Goteiras + Parede do Quarto', cost: 130, elec: 0, san: 0, space: 44, comfort: 6, desc: 'Fecha os buracos do telhado, passa reboco nas paredes e levanta uma parede para separar o quarto.' },
+                    { level: 2, title: 'Casa Maior + Telhado que Isola Calor', cost: 240, elec: 0, san: 0, space: 82, comfort: 14, desc: 'Aumenta o espaço da casa, coloca portas internas e usa telhado que ajuda a segurar o calor do sol e o barulho.' }
+                ]
+            },
+            {
+                id: 'ventilation',
+                pillar: 'Conforto',
+                name: 'Ar Fresco, Luz do Sol e Piso',
+                icon: '🪟',
+                highlightPos: { x: -1.2, z: 0.4, rx: 4.6, rz: 4.0 },
+                problemDesc: 'O chão é de terra úmida, a janela está tampada com madeira/papelão e a casa fica escura e abafada.',
+                options: [
+                    { level: 1, title: 'Chão de Cimento + Janelas que Abrem', cost: 100, elec: 0, san: 0, space: 0, comfort: 18, desc: 'Troca a terra batida por piso de cimento liso, firma a porta e coloca janelas que deixam o ar entrar.' },
+                    { level: 2, title: 'Piso de Cerâmica + Circulação de Ar', cost: 190, elec: 0, san: 0, space: 0, comfort: 34, desc: 'Coloca piso cerâmico fácil de limpar e janelas maiores para o ar circular e iluminar bem de dia.' }
+                ]
+            },
+            {
+                id: 'furniture',
+                pillar: 'Conforto',
+                name: 'Móveis para Descansar e Comer',
+                icon: '🛋️',
+                highlightPos: { x: -2.8, z: 0.2, rx: 4.2, rz: 3.8 },
+                problemDesc: 'Só há um colchão fino no chão e caixotes de madeira usados como mesa.',
+                options: [
+                    { level: 1, title: 'Cama com Estrado + Mesa e Fogão', cost: 90, elec: 0, san: 0, space: 0, comfort: 16, desc: 'Tira o colchão do chão com cama de estrado, coloca mesa para as refeições e fogão na cozinha.' },
+                    { level: 2, title: 'Quarto, Sala e Cozinha Completos', cost: 180, elec: 0, san: 0, space: 0, comfort: 32, desc: 'Deixa o quarto com cama de casal e guarda-roupa, sala com sofá e cozinha bem organizada.' }
+                ]
+            }
+        ];
+
+        let gameState = {
+            budget: INITIAL_BUDGET,
+            levels: {
+                electricity: 0,
+                water: 0,
+                sewage: 0,
+                drainage: 0,
+                waste: 0,
+                space: 0,
+                ventilation: 0,
+                furniture: 0
+            },
+            history: [], // Pilha para "Desfazer Última"
+            activeTab: 'all',
+            selectedCategory: null,
+            hoveredCategory: null,
+            isRaining: false
+        };
+
+        /**
+         * ============================================================================
+         * 3. ENGINE 3D (THREE.JS + ORBITCONTROLS - TERRENO 16x13 COM 4 AMBIENTES)
+         * ============================================================================
+         */
+        let scene, camera, renderer, controls, houseGroup;
+        let sunLight, ambientLight, roomLightMain, roomLightBedroom, roomLightBath;
+        let interactiveMeshes = [];
+        let categoryGroups = {};
+        let particlesList = [];
+        let rainMeshes = [];
+        let highlightRingMesh = null;
+
+        // Pontos dinâmicos para partículas
+        let dripPositions = [];
+        let sparkPositions = [];
+        let flyCenters = [];
+        let flickeringBulbMesh = null;
+
+        // Câmera suave
+        let cameraAnim = null;
+
+        function createProceduralTexture(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            if (type === 'bricks') {
+                ctx.fillStyle = '#9a3412';
+                ctx.fillRect(0, 0, 256, 256);
+                const rows = 8, cols = 4;
+                const bh = 256 / rows, bw = 256 / cols;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const offset = (r % 2) * (bw / 2);
+                        ctx.fillStyle = (r + c) % 2 === 0 ? '#c2410c' : '#b45309';
+                        ctx.fillRect((c * bw + offset) % 256 + 2, r * bh + 2, bw - 4, bh - 4);
+                    }
+                }
+                ctx.fillStyle = 'rgba(28, 25, 23, 0.45)';
+                ctx.beginPath();
+                ctx.arc(65, 195, 50, 0, Math.PI * 2);
+                ctx.arc(195, 210, 42, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (type === 'dirt') {
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(0, 0, 256, 256);
+                for (let i = 0; i < 700; i++) {
+                    ctx.fillStyle = Math.random() > 0.5 ? '#92400e' : '#451a03';
+                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 4, 4);
+                }
+            } else if (type === 'tiles') {
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 3;
+                for (let i = 0; i <= 256; i += 64) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 256); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
+                }
+            } else if (type === 'thermoRoof') {
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.strokeStyle = '#78350f';
+                ctx.lineWidth = 4;
+                for (let y = 0; y < 256; y += 32) {
+                    for (let x = 0; x < 256; x += 32) {
+                        ctx.beginPath();
+                        ctx.arc(x + 16, y + 16, 14, 0, Math.PI);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        const textures = {};
+
+        function initThreeJS() {
+            const container = document.getElementById('three-container');
+
+            textures.bricks = createProceduralTexture('bricks');
+            textures.dirt = createProceduralTexture('dirt');
+            textures.tiles = createProceduralTexture('tiles');
+            textures.tiles.repeat.set(4, 3);
+            textures.thermoRoof = createProceduralTexture('thermoRoof');
+            textures.thermoRoof.repeat.set(5, 3);
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xdbeafe);
+            scene.fog = new THREE.FogExp2(0xdbeafe, 0.015);
+
+            camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 120);
+            camera.position.set(11.5, 11.5, 13.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // OrbitControls suave
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.07;
+            controls.maxPolarAngle = Math.PI / 2.15;
+            controls.minDistance = 7;
+            controls.maxDistance = 26;
+            controls.target.set(0.2, 0.6, 0.2);
+
+            // Iluminação
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.62);
+            scene.add(ambientLight);
+
+            sunLight = new THREE.DirectionalLight(0xfffbeb, 0.95);
+            sunLight.position.set(10, 18, 12);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 2;
+            sunLight.shadow.camera.far = 42;
+            const d = 11;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            scene.add(sunLight);
+
+            // Luzes internas dos cômodos
+            roomLightMain = new THREE.PointLight(0xfef08a, 0.45, 9);
+            roomLightMain.position.set(-0.5, 2.5, 0.5);
+            scene.add(roomLightMain);
+
+            roomLightBedroom = new THREE.PointLight(0xfef08a, 0.3, 8);
+            roomLightBedroom.position.set(-4.0, 2.5, -0.5);
+            scene.add(roomLightBedroom);
+
+            roomLightBath = new THREE.PointLight(0xfef08a, 0.3, 7);
+            roomLightBath.position.set(1.8, 2.5, -1.8);
+            scene.add(roomLightBath);
+
+            // TERRENO AMPLIADO 16 x 13 UNIDADES
+            const plotBase = new THREE.Mesh(
+                new THREE.BoxGeometry(16.4, 0.5, 13.4),
+                new THREE.MeshStandardMaterial({ color: 0x4d7c0f, roughness: 0.92 })
+            );
+            plotBase.position.y = -0.35;
+            plotBase.receiveShadow = true;
+            scene.add(plotBase);
+
+            // Gramado superior do lote 16x13
+            const grassTop = new THREE.Mesh(
+                new THREE.BoxGeometry(16.0, 0.08, 13.0),
+                new THREE.MeshStandardMaterial({ color: 0x65a30d, roughness: 0.88 })
+            );
+            grassTop.position.y = -0.08;
+            grassTop.receiveShadow = true;
+            scene.add(grassTop);
+
+            // Mureta baixa perimetral do terreno 16x13
+            const fenceMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.85 });
+            const backFence = new THREE.Mesh(new THREE.BoxGeometry(16.0, 0.45, 0.16), fenceMat);
+            backFence.position.set(0, 0.16, -6.42);
+            scene.add(backFence);
+            const leftFence = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.45, 13.0), fenceMat);
+            leftFence.position.set(-7.92, 0.16, 0);
+            scene.add(leftFence);
+            const rightFence = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.45, 13.0), fenceMat);
+            rightFence.position.set(7.92, 0.16, 0);
+            scene.add(rightFence);
+
+            // Anel/Contorno Luminoso de Destaque 3D ao passar o mouse ou selecionar módulo
+            const ringGeo = new THREE.RingGeometry(0.92, 1.0, 4);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xfacc15,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.85
+            });
+            highlightRingMesh = new THREE.Mesh(ringGeo, ringMat);
+            highlightRingMesh.rotation.x = -Math.PI / 2;
+            highlightRingMesh.rotation.z = Math.PI / 4;
+            highlightRingMesh.position.y = 0.08;
+            highlightRingMesh.visible = false;
+            scene.add(highlightRingMesh);
+
+            houseGroup = new THREE.Group();
+            scene.add(houseGroup);
+
+            UPGRADE_CATEGORIES.forEach(cat => {
+                const grp = new THREE.Group();
+                grp.userData = { categoryId: cat.id };
+                houseGroup.add(grp);
+                categoryGroups[cat.id] = grp;
+            });
+
+            rebuild3DHouse(false);
+            setupPointerEvents(renderer.domElement);
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function registerInteractive(mesh, categoryId) {
+            mesh.userData.categoryId = categoryId;
+            interactiveMeshes.push(mesh);
+        }
+
+        function clearGroup(grp) {
+            while (grp.children.length > 0) {
+                grp.remove(grp.children[0]);
+            }
+        }
+
+        /**
+         * RECONSTRÓI A MAQUETE 3D DOS 4 AMBIENTES E 8 MÓDULOS
+         * Coordenadas do Terreno 16x13: X de -8.0 a +8.0 | Z de -6.5 a +6.5
+         * Casa Principal ocupa:
+         *   - Nível 0/1: X de -5.8 a +2.6 (largura 8.4), Z de -4.5 a +2.2 (profundidade 6.7)
+         *   - Nível 2 (Ampliada): Quarto expande até X = -6.8 e Sala até Z = +3.0
+         * Divisões internas:
+         *   - Quarto Privativo: X < -2.2
+         *   - Sala & Cozinha Integrada: X de -2.2 a +0.6
+         *   - Banheiro: X de +0.6 a +2.6, Z de -4.5 a -1.0
+         *   - Área de Serviço & Quintal Externo: X > +2.6 e Z > +2.2
+         */
+        function rebuild3DHouse(spawnFx = true, changedCategoryId = null) {
+            interactiveMeshes = [];
+            dripPositions = [];
+            sparkPositions = [];
+            flyCenters = [];
+            flickeringBulbMesh = null;
+
+            const eLvl = gameState.levels.electricity;
+            const wLvl = gameState.levels.water;
+            const sLvl = gameState.levels.sewage;
+            const dLvl = gameState.levels.drainage;
+            const rLvl = gameState.levels.waste;
+            const spLvl = gameState.levels.space;
+            const vLvl = gameState.levels.ventilation;
+            const fLvl = gameState.levels.furniture;
+
+            // Dimensões dinâmicas conforme upgrade de Espaço
+            const houseMinX = spLvl === 2 ? -6.8 : -5.6;
+            const houseMaxX = 2.6;
+            const houseMinZ = -4.5;
+            const houseMaxZ = spLvl === 2 ? 2.8 : 2.0;
+            const houseW = houseMaxX - houseMinX;
+            const houseD = houseMaxZ - houseMinZ;
+            const houseCenterX = (houseMinX + houseMaxX) / 2;
+            const houseCenterZ = (houseMinZ + houseMaxZ) / 2;
+            const wallHeight = spLvl === 2 ? 2.75 : 2.35;
+
+            // =========================================================================
+            // 1. [CONFORTO] VENTILAÇÃO, ABERTURAS & PISO (Base do piso + Janelas/Portas)
+            // =========================================================================
+            const ventGrp = categoryGroups['ventilation'];
+            clearGroup(ventGrp);
+
+            let floorMat;
+            if (vLvl === 0) {
+                floorMat = new THREE.MeshStandardMaterial({ map: textures.dirt, roughness: 1 });
+            } else if (vLvl === 1) {
+                floorMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.72 });
+            } else {
+                floorMat = new THREE.MeshStandardMaterial({ map: textures.tiles, roughness: 0.22, metalness: 0.05 });
+            }
+
+            const floorY = dLvl >= 1 ? 0.08 : -0.02; // Elevação do piso com drenagem!
+            const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(houseW, 0.24, houseD), floorMat);
+            floorMesh.position.set(houseCenterX, floorY, houseCenterZ);
+            floorMesh.receiveShadow = true;
+            ventGrp.add(floorMesh);
+            registerInteractive(floorMesh, 'ventilation');
+
+            if (vLvl === 0) {
+                // Chão úmido com poças internas
+                const puddleMat = new THREE.MeshStandardMaterial({ color: 0x0369a1, roughness: 0.15, transparent: true, opacity: 0.8 });
+                const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.75, 0.03, 18), puddleMat);
+                p1.position.set(-1.2, floorY + 0.13, 0.3);
+                ventGrp.add(p1);
+
+                // Janela tapada com tábuas/papelão na parede traseira
+                const boardMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+                const woodCover = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.0, 0.12), boardMat);
+                woodCover.position.set(-1.0, 1.4, houseMinZ);
+                ventGrp.add(woodCover);
+                registerInteractive(woodCover, 'ventilation');
+
+                // Porta torta improvisada
+                const badDoor = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.6, 0.1), boardMat);
+                badDoor.position.set(-0.6, 0.88, houseMaxZ);
+                badDoor.rotation.z = -0.05;
+                ventGrp.add(badDoor);
+                registerInteractive(badDoor, 'ventilation');
+            } else if (vLvl === 1) {
+                // Janelas basculantes simples
+                const frameMat = new THREE.MeshStandardMaterial({ color: 0xb45309 });
+                [-3.8, -1.0].forEach(wx => {
+                    const win = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.85, 0.16), frameMat);
+                    win.position.set(wx, 1.45, houseMinZ);
+                    ventGrp.add(win);
+                    registerInteractive(win, 'ventilation');
+
+                    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.65, 0.18), new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.65 }));
+                    glass.position.set(wx, 1.45, houseMinZ);
+                    ventGrp.add(glass);
+                });
+                const door = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.75, 0.1), frameMat);
+                door.position.set(-0.6, 0.95, houseMaxZ);
+                ventGrp.add(door);
+                registerInteractive(door, 'ventilation');
+            } else {
+                // Janelas amplas de vidro/alumínio com ventilação cruzada e raios de sol
+                const alumMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.4, roughness: 0.25 });
+                [-4.0, -1.0].forEach(wx => {
+                    const win = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.05, 0.16), alumMat);
+                    win.position.set(wx, 1.5, houseMinZ);
+                    ventGrp.add(win);
+                    registerInteractive(win, 'ventilation');
+
+                    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.88, 0.18), new THREE.MeshStandardMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.4 }));
+                    glass.position.set(wx, 1.5, houseMinZ);
+                    ventGrp.add(glass);
+
+                    const sunBeam = new THREE.Mesh(
+                        new THREE.PlaneGeometry(1.4, 2.4),
+                        new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.2, side: THREE.DoubleSide })
+                    );
+                    sunBeam.rotation.x = -Math.PI / 2;
+                    sunBeam.position.set(wx, floorY + 0.13, houseMinZ + 1.4);
+                    ventGrp.add(sunBeam);
+                });
+
+                const door2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.85, 0.11), new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.35 }));
+                door2.position.set(-0.6, 1.0, houseMaxZ);
+                ventGrp.add(door2);
+                registerInteractive(door2, 'ventilation');
+            }
+
+            // =========================================================================
+            // 2. [ESPAÇO] ESPAÇO, DIVISÕES & COBERTURA
+            // =========================================================================
+            const spaceGrp = categoryGroups['space'];
+            clearGroup(spaceGrp);
+
+            let wallMat;
+            if (spLvl === 0) {
+                wallMat = new THREE.MeshStandardMaterial({ map: textures.bricks, roughness: 0.95 });
+            } else if (spLvl === 1) {
+                wallMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.8 });
+            } else {
+                wallMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.45 });
+            }
+
+            const addWall = (w, h, d, x, y, z, mat = wallMat) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+                m.position.set(x, y, z);
+                m.castShadow = true;
+                m.receiveShadow = true;
+                spaceGrp.add(m);
+                registerInteractive(m, 'space');
+                return m;
+            };
+
+            // Parede Traseira Alta (Z = houseMinZ) com vãos das janelas
+            addWall(houseW, 0.95, 0.18, houseCenterX, 0.48, houseMinZ); // Peitoril contínuo
+            addWall(houseW, 0.5, 0.18, houseCenterX, wallHeight - 0.25, houseMinZ); // Verga superior
+            addWall(1.4, wallHeight, 0.18, houseMinX + 0.7, wallHeight / 2, houseMinZ); // Canto esquerdo
+            addWall(1.5, wallHeight, 0.18, -2.5, wallHeight / 2, houseMinZ); // Pilar entre janelas
+            addWall(2.9, wallHeight, 0.18, 1.15, wallHeight / 2, houseMinZ); // Parede fundo banheiro/cozinha
+
+            // Parede Esquerda Alta (X = houseMinX)
+            addWall(0.18, wallHeight, houseD, houseMinX, wallHeight / 2, houseCenterZ);
+
+            // Parede Direita da Casa (X = houseMaxX = 2.6) - meia altura na frente para visão cutaway
+            addWall(0.18, wallHeight, 3.5, houseMaxX, wallHeight / 2, -2.75); // Parede banheiro
+            addWall(0.18, 0.9, houseD - 3.5, houseMaxX, 0.45, houseCenterZ + 1.75); // Corte lateral cozinha
+
+            // Parede Frontal em Corte Cutaway (Z = houseMaxZ)
+            addWall(houseW, 0.85, 0.18, houseCenterX, 0.425, houseMaxZ);
+
+            // Parede do Banheiro (X = 0.6, Z de -4.5 a -1.0)
+            addWall(0.16, wallHeight - 0.2, 3.5, 0.6, (wallHeight - 0.2) / 2, -2.75);
+
+            // Divisória do Quarto Privativo (X = -2.2) - Só existe no Nível 1 e 2!
+            if (spLvl >= 1) {
+                addWall(0.16, wallHeight - 0.2, houseD - 1.6, -2.2, (wallHeight - 0.2) / 2, houseMinZ + (houseD - 1.6) / 2);
+                if (spLvl === 2) {
+                    // Porta interna do quarto e porta do banheiro
+                    const intDoorMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.4 });
+                    const bedDoor = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.85, 0.85), intDoorMat);
+                    bedDoor.position.set(-2.2, 0.95, houseMaxZ - 0.9);
+                    bedDoor.rotation.y = 0.55; // Porta entreaberta
+                    spaceGrp.add(bedDoor);
+
+                    const bathDoor = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.85, 0.1), intDoorMat);
+                    bathDoor.position.set(1.5, 0.95, -1.0);
+                    spaceGrp.add(bathDoor);
+                }
+            }
+
+            // Cobertura / Telhado em corte na parte traseira (mantendo planta aberta à visão)
+            if (spLvl === 0) {
+                const rottenMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.95 });
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(houseW + 0.4, 0.14, 2.2), rottenMat);
+                roof.position.set(houseCenterX, wallHeight + 0.15, houseMinZ + 0.9);
+                roof.rotation.x = 0.18;
+                spaceGrp.add(roof);
+                registerInteractive(roof, 'space');
+
+                // Buraco no telhado
+                const hole = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.16, 0.8), new THREE.MeshBasicMaterial({ color: 0x93c5fd }));
+                hole.position.set(-1.2, wallHeight + 0.18, houseMinZ + 0.9);
+                hole.rotation.x = 0.18;
+                spaceGrp.add(hole);
+
+                dripPositions.push(new THREE.Vector3(-1.2, wallHeight, houseMinZ + 1.0));
+                dripPositions.push(new THREE.Vector3(-3.6, wallHeight, houseMinZ + 1.0));
+            } else if (spLvl === 1) {
+                const roof1 = new THREE.Mesh(
+                    new THREE.BoxGeometry(houseW + 0.5, 0.16, 2.5),
+                    new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.65 })
+                );
+                roof1.position.set(houseCenterX, wallHeight + 0.18, houseMinZ + 1.05);
+                roof1.rotation.x = 0.18;
+                roof1.castShadow = true;
+                spaceGrp.add(roof1);
+                registerInteractive(roof1, 'space');
+            } else {
+                const roof2 = new THREE.Mesh(
+                    new THREE.BoxGeometry(houseW + 0.6, 0.18, 2.8),
+                    new THREE.MeshStandardMaterial({ map: textures.thermoRoof, roughness: 0.55 })
+                );
+                roof2.position.set(houseCenterX, wallHeight + 0.22, houseMinZ + 1.15);
+                roof2.rotation.x = 0.18;
+                roof2.castShadow = true;
+                spaceGrp.add(roof2);
+                registerInteractive(roof2, 'space');
+
+                // Forro termoacústico amadeirado
+                const ceiling = new THREE.Mesh(
+                    new THREE.BoxGeometry(houseW + 0.2, 0.08, 2.6),
+                    new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.45 })
+                );
+                ceiling.position.set(houseCenterX, wallHeight + 0.08, houseMinZ + 1.15);
+                ceiling.rotation.x = 0.18;
+                spaceGrp.add(ceiling);
+            }
+
+            // =========================================================================
+            // 3. [ELETRICIDADE] REDE ELÉTRICA & ILUMINAÇÃO
+            // =========================================================================
+            const elecGrp = categoryGroups['electricity'];
+            clearGroup(elecGrp);
+
+            if (eLvl === 0) {
+                const wireMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+                const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 4.5, 8), wireMat);
+                wire.rotation.z = Math.PI / 2.15;
+                wire.position.set(-2.0, wallHeight - 0.2, houseMinZ + 0.3);
+                elecGrp.add(wire);
+                registerInteractive(wire, 'electricity');
+
+                flickeringBulbMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.12, 12, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfacc15, emissiveIntensity: 0.6 })
+                );
+                flickeringBulbMesh.position.set(-1.0, wallHeight - 0.45, -0.5);
+                elecGrp.add(flickeringBulbMesh);
+                registerInteractive(flickeringBulbMesh, 'electricity');
+
+                sparkPositions.push(new THREE.Vector3(-2.6, wallHeight - 0.25, houseMinZ + 0.3));
+                roomLightMain.intensity = 0.4;
+                roomLightBedroom.intensity = 0.2;
+                roomLightBath.intensity = 0.2;
+            } else if (eLvl === 1) {
+                // Quadro de disjuntores + eletrodutos aparentes organizados
+                const panel = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.42, 0.55, 0.12),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.4 })
+                );
+                panel.position.set(-2.0, 1.55, houseMinZ + 0.14);
+                elecGrp.add(panel);
+                registerInteractive(panel, 'electricity');
+
+                const conduit = new THREE.Mesh(
+                    new THREE.BoxGeometry(6.5, 0.06, 0.06),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+                );
+                conduit.position.set(-1.5, wallHeight - 0.25, houseMinZ + 0.12);
+                elecGrp.add(conduit);
+                registerInteractive(conduit, 'electricity');
+
+                roomLightMain.intensity = 0.85;
+                roomLightBedroom.intensity = 0.65;
+                roomLightBath.intensity = 0.55;
+            } else {
+                // Quadro DR completo + luminárias LED em todos os cômodos
+                const panel2 = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.48, 0.65, 0.12),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 })
+                );
+                panel2.position.set(-2.0, 1.6, houseMinZ + 0.14);
+                elecGrp.add(panel2);
+                registerInteractive(panel2, 'electricity');
+
+                const ledGreen = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), new THREE.MeshBasicMaterial({ color: 0x22c55e }));
+                ledGreen.position.set(-2.0, 1.75, houseMinZ + 0.21);
+                elecGrp.add(ledGreen);
+
+                [[-4.0, -0.5], [-0.8, 0.4], [1.6, -2.5]].forEach(([lx, lz]) => {
+                    const lamp = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.28, 0.28, 0.06, 20),
+                        new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfef9c3, emissiveIntensity: 1.0 })
+                    );
+                    lamp.position.set(lx, wallHeight - 0.05, lz);
+                    elecGrp.add(lamp);
+                    registerInteractive(lamp, 'electricity');
+                });
+
+                roomLightMain.intensity = 1.25;
+                roomLightBedroom.intensity = 1.05;
+                roomLightBath.intensity = 0.95;
+            }
+
+            // =========================================================================
+            // 4. [SANEAMENTO 1/4] ABASTECIMENTO DE ÁGUA (Quintal Externo + Pia/Chuveiro)
+            // =========================================================================
+            const waterGrp = categoryGroups['water'];
+            clearGroup(waterGrp);
+
+            if (wLvl === 0) {
+                // Baldes e galões improvisados
+                const bucketMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
+                [[3.6, -2.8], [4.2, -2.3], [0.2, 0.8]].forEach(([bx, bz]) => {
+                    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.48, 16), bucketMat);
+                    b.position.set(bx, 0.25, bz);
+                    b.castShadow = true;
+                    waterGrp.add(b);
+                    registerInteractive(b, 'water');
+                });
+            } else {
+                // Torre suporte metálica + Caixa d'Água Azul (500L ou 1000L com filtro)
+                const standMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6 });
+                [[3.8, -3.4], [5.0, -3.4], [3.8, -2.2], [5.0, -2.2]].forEach(([sx, sz]) => {
+                    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.2, 0.1), standMat);
+                    leg.position.set(sx, 1.1, sz);
+                    leg.castShadow = true;
+                    waterGrp.add(leg);
+                });
+                const platform = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.1, 1.45), standMat);
+                platform.position.set(4.4, 2.2, -2.8);
+                waterGrp.add(platform);
+
+                const tankRadius = wLvl === 2 ? 0.72 : 0.54;
+                const tankHeight = wLvl === 2 ? 1.15 : 0.85;
+                const tank = new THREE.Mesh(
+                    new THREE.CylinderGeometry(tankRadius, tankRadius * 0.92, tankHeight, 24),
+                    new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 })
+                );
+                tank.position.set(4.4, 2.25 + tankHeight / 2, -2.8);
+                tank.castShadow = true;
+                waterGrp.add(tank);
+                registerInteractive(tank, 'water');
+
+                // Tubulação de alimentação ligando a caixa à casa
+                const feedPipe = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.04, 0.04, 2.0, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x92400e })
+                );
+                feedPipe.rotation.z = Math.PI / 2;
+                feedPipe.position.set(3.4, 2.1, -2.8);
+                waterGrp.add(feedPipe);
+
+                if (wLvl === 2) {
+                    // Filtro pressurizador azul escuro ao lado da torre
+                    const filterCyl = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.16, 0.16, 0.75, 14),
+                        new THREE.MeshStandardMaterial({ color: 0x1d4ed8 })
+                    );
+                    filterCyl.position.set(3.5, 0.4, -2.2);
+                    waterGrp.add(filterCyl);
+                }
+            }
+
+            // =========================================================================
+            // 5. [SANEAMENTO 2/4] ESGOTAMENTO SANITÁRIO (Banheiro + Fossa/Biodigestor)
+            // =========================================================================
+            const sewageGrp = categoryGroups['sewage'];
+            clearGroup(sewageGrp);
+
+            if (sLvl === 0) {
+                // Vala de esgoto a céu aberto no quintal + vaso improvisado
+                const trench = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.8, 0.06, 0.55),
+                    new THREE.MeshStandardMaterial({ color: 0x3f2e21, roughness: 0.2 })
+                );
+                trench.position.set(4.2, -0.02, 0.4);
+                sewageGrp.add(trench);
+                registerInteractive(trench, 'sewage');
+
+                const oldToilet = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.22, 0.2, 0.38, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xa8a29e })
+                );
+                oldToilet.position.set(1.9, floorY + 0.3, -3.7);
+                sewageGrp.add(oldToilet);
+                registerInteractive(oldToilet, 'sewage');
+            } else {
+                // Banheiro equipado (Vaso com caixa acoplada, pia e box)
+                const porcelainMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+                const toilet = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.42, 16), porcelainMat);
+                toilet.position.set(2.0, floorY + 0.32, -3.7);
+                toilet.castShadow = true;
+                sewageGrp.add(toilet);
+                registerInteractive(toilet, 'sewage');
+
+                const tank = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.36, 0.18), porcelainMat);
+                tank.position.set(2.0, floorY + 0.65, -3.95);
+                sewageGrp.add(tank);
+
+                const bathSink = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.14, 0.45), porcelainMat);
+                bathSink.position.set(1.1, floorY + 0.85, -3.85);
+                sewageGrp.add(bathSink);
+                registerInteractive(bathSink, 'sewage');
+
+                // Sistema externo no quintal: Fossa Séptica (N1) ou Biodigestor + Rede Pública (N2)
+                const bioColor = sLvl === 2 ? 0x15803d : 0x64748b;
+                const bioTank = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.75, 0.75, 0.35, 20),
+                    new THREE.MeshStandardMaterial({ color: bioColor, roughness: 0.5 })
+                );
+                bioTank.position.set(4.3, 0.12, 0.4);
+                bioTank.castShadow = true;
+                sewageGrp.add(bioTank);
+                registerInteractive(bioTank, 'sewage');
+
+                if (sLvl === 2) {
+                    // Caixa de inspeção e ligação à rede pública
+                    const inspectionBox = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.55, 0.22, 0.55),
+                        new THREE.MeshStandardMaterial({ color: 0x0f172a })
+                    );
+                    inspectionBox.position.set(6.2, 0.08, 0.4);
+                    sewageGrp.add(inspectionBox);
+                    registerInteractive(inspectionBox, 'sewage');
+                }
+            }
+
+            // =========================================================================
+            // 6. [SANEAMENTO 3/4] DRENAGEM PLUVIAL (Poças de lama vs Valetas/Calhas)
+            // =========================================================================
+            const drainGrp = categoryGroups['drainage'];
+            clearGroup(drainGrp);
+
+            if (dLvl === 0) {
+                // Poças de lama alagando o quintal
+                const mudMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.15, transparent: true, opacity: 0.88 });
+                [[-1.5, 3.8, 1.3], [1.4, 4.1, 1.1], [3.5, 2.2, 0.95]].forEach(([px, pz, rad]) => {
+                    const puddle = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 1.05, 0.04, 20), mudMat);
+                    puddle.position.set(px, -0.02, pz);
+                    drainGrp.add(puddle);
+                    registerInteractive(puddle, 'drainage');
+                });
+            } else if (dLvl === 1) {
+                // Valetas/canaletas de escoamento ao redor da casa
+                const trenchMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 });
+                const frontChannel = new THREE.Mesh(new THREE.BoxGeometry(houseW + 1.2, 0.08, 0.45), trenchMat);
+                frontChannel.position.set(houseCenterX, 0.0, houseMaxZ + 0.55);
+                drainGrp.add(frontChannel);
+                registerInteractive(frontChannel, 'drainage');
+            } else {
+                // Calçada drenante perimetral + ralos pluviais + calha e condutor vertical
+                const paverMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.6 });
+                const walkway = new THREE.Mesh(new THREE.BoxGeometry(houseW + 1.8, 0.12, 1.2), paverMat);
+                walkway.position.set(houseCenterX, 0.02, houseMaxZ + 0.8);
+                walkway.receiveShadow = true;
+                drainGrp.add(walkway);
+                registerInteractive(walkway, 'drainage');
+
+                // Grelhas de ralo pluvial
+                const grateMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7 });
+                [-3.2, 0.5, 2.2].forEach(gx => {
+                    const grate = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.14, 0.35), grateMat);
+                    grate.position.set(gx, 0.02, houseMaxZ + 0.8);
+                    drainGrp.add(grate);
+                    registerInteractive(grate, 'drainage');
+                });
+
+                // Calha no telhado e tubo de queda
+                const gutter = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.09, 0.09, houseW + 0.6, 12, 1, false, 0, Math.PI),
+                    new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.6 })
+                );
+                gutter.rotation.z = Math.PI / 2;
+                gutter.position.set(houseCenterX, wallHeight + 0.32, houseMinZ - 0.15);
+                drainGrp.add(gutter);
+                registerInteractive(gutter, 'drainage');
+            }
+
+            // =========================================================================
+            // 7. [SANEAMENTO 4/4] COLETA DE RESÍDUOS (Sacos rasgados vs Coleta Seletiva)
+            // =========================================================================
+            const wasteGrp = categoryGroups['waste'];
+            clearGroup(wasteGrp);
+
+            if (rLvl === 0) {
+                // Sacos rasgados e lixo espalhado atraindo moscas
+                const bagMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+                [[4.6, 3.3, 0.32], [5.2, 3.6, 0.26], [4.3, 3.9, 0.24]].forEach(([wx, wz, rad]) => {
+                    const bag = new THREE.Mesh(new THREE.DodecahedronGeometry(rad, 1), bagMat);
+                    bag.position.set(wx, rad * 0.7, wz);
+                    bag.castShadow = true;
+                    wasteGrp.add(bag);
+                    registerInteractive(bag, 'waste');
+                });
+                flyCenters.push(new THREE.Vector3(4.8, 0.75, 3.5));
+            } else if (rLvl === 1) {
+                // Lixeiras tampadas resistentes
+                const bin1 = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.28, 0.24, 0.75, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x334155 })
+                );
+                bin1.position.set(4.8, 0.38, 3.4);
+                bin1.castShadow = true;
+                wasteGrp.add(bin1);
+                registerInteractive(bin1, 'waste');
+            } else {
+                // Abrigo coberto + 3 lixeiras de coleta seletiva (Orgânico, Reciclável, Rejeito)
+                const shelterBase = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.1, 0.1, 1.2),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8 })
+                );
+                shelterBase.position.set(5.1, 0.02, 3.5);
+                wasteGrp.add(shelterBase);
+                registerInteractive(shelterBase, 'waste');
+
+                const roofCover = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.2, 0.08, 1.3),
+                    new THREE.MeshStandardMaterial({ color: 0x475569 })
+                );
+                roofCover.position.set(5.1, 1.35, 3.5);
+                roofCover.castShadow = true;
+                wasteGrp.add(roofCover);
+
+                [[4.45, 0x16a34a], [5.1, 0x2563eb], [5.75, 0x64748b]].forEach(([bx, col]) => {
+                    const bin = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.24, 0.21, 0.72, 16),
+                        new THREE.MeshStandardMaterial({ color: col })
+                    );
+                    bin.position.set(bx, 0.42, 3.5);
+                    bin.castShadow = true;
+                    wasteGrp.add(bin);
+                    registerInteractive(bin, 'waste');
+                });
+            }
+
+            // =========================================================================
+            // 8. [CONFORTO] MOBILIÁRIO & HABITABILIDADE (Quarto, Sala e Cozinha)
+            // =========================================================================
+            const furnGrp = categoryGroups['furniture'];
+            clearGroup(furnGrp);
+
+            if (fLvl === 0) {
+                // Colchão fino direto no chão + caixotes de madeira
+                const mattress = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.25, 0.12, 1.95),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.9 })
+                );
+                mattress.position.set(-4.3, floorY + 0.18, -1.8);
+                mattress.castShadow = true;
+                furnGrp.add(mattress);
+                registerInteractive(mattress, 'furniture');
+
+                const crateMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.9 });
+                const crate = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.48, 0.65), crateMat);
+                crate.position.set(-1.1, floorY + 0.36, -0.5);
+                crate.castShadow = true;
+                furnGrp.add(crate);
+                registerInteractive(crate, 'furniture');
+            } else if (fLvl === 1) {
+                // Cama com estrado + mesa com cadeiras + fogão/pia na cozinha
+                const woodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.6 });
+                const bed = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.36, 2.0), woodMat);
+                bed.position.set(-4.3, floorY + 0.3, -1.8);
+                bed.castShadow = true;
+                furnGrp.add(bed);
+                registerInteractive(bed, 'furniture');
+
+                const table = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.08, 0.8), woodMat);
+                table.position.set(-1.1, floorY + 0.82, 0.3);
+                table.castShadow = true;
+                furnGrp.add(table);
+                registerInteractive(table, 'furniture');
+
+                const stove = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.65, 0.82, 0.6),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+                );
+                stove.position.set(-0.2, floorY + 0.53, -3.9);
+                furnGrp.add(stove);
+                registerInteractive(stove, 'furniture');
+            } else {
+                // Quarto completo (Cama casal + Guarda-roupa), Sofá na sala, Cozinha equipada e Mesa de jantar
+                const richWood = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.4 });
+
+                // Cama Casal + Colcha + Travesseiros
+                const doubleBed = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.38, 2.05), richWood);
+                doubleBed.position.set(-4.4, floorY + 0.31, -2.2);
+                doubleBed.castShadow = true;
+                furnGrp.add(doubleBed);
+                registerInteractive(doubleBed, 'furniture');
+
+                const quilt = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.56, 0.22, 1.92),
+                    new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.7 })
+                );
+                quilt.position.set(-4.4, floorY + 0.54, -2.2);
+                furnGrp.add(quilt);
+
+                // Guarda-roupa no quarto
+                const wardrobe = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.85, 1.35), richWood);
+                wardrobe.position.set(houseMinX + 0.42, floorY + 1.04, 0.4);
+                wardrobe.castShadow = true;
+                furnGrp.add(wardrobe);
+                registerInteractive(wardrobe, 'furniture');
+
+                // Sofá aconchegante na sala
+                const sofa = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.55, 0.55, 0.72),
+                    new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.75 })
+                );
+                sofa.position.set(-1.2, floorY + 0.39, 1.35);
+                sofa.castShadow = true;
+                furnGrp.add(sofa);
+                registerInteractive(sofa, 'furniture');
+
+                // Cozinha equipada (Bancada, Pia inox e Fogão)
+                const kitchenCounter = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.85, 0.85, 0.62),
+                    new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.3 })
+                );
+                kitchenCounter.position.set(-0.5, floorY + 0.54, -3.95);
+                kitchenCounter.castShadow = true;
+                furnGrp.add(kitchenCounter);
+                registerInteractive(kitchenCounter, 'furniture');
+
+                // Mesa de jantar com cadeiras
+                const diningTable = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.85), richWood);
+                diningTable.position.set(-0.9, floorY + 0.84, -1.6);
+                diningTable.castShadow = true;
+                furnGrp.add(diningTable);
+                registerInteractive(diningTable, 'furniture');
+            }
+
+            if (spawnFx && changedCategoryId) {
+                spawnUpgradeParticles(changedCategoryId);
+                highlightSector3D(changedCategoryId);
+            }
+        }
+
+        /**
+         * CONTORNO LUMINOSO 3D NO SETOR SELECIONADO / HOVER
+         */
+        function highlightSector3D(catId) {
+            if (!highlightRingMesh) return;
+            if (!catId) {
+                highlightRingMesh.visible = false;
+                return;
+            }
+            const cat = UPGRADE_CATEGORIES.find(c => c.id === catId);
+            if (!cat) return;
+
+            highlightRingMesh.visible = true;
+            highlightRingMesh.position.set(cat.highlightPos.x, 0.14, cat.highlightPos.z);
+            highlightRingMesh.scale.set(cat.highlightPos.rx * 0.65, cat.highlightPos.rz * 0.65, 1);
+        }
+
+        function spawnUpgradeParticles(catId) {
+            const cat = UPGRADE_CATEGORIES.find(c => c.id === catId);
+            const origin = cat
+                ? new THREE.Vector3(cat.highlightPos.x, 1.1, cat.highlightPos.z)
+                : new THREE.Vector3(0, 1, 0);
+
+            for (let i = 0; i < 28; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.07, 6, 6),
+                    new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xfacc15 : 0x34d399, transparent: true, opacity: 1 })
+                );
+                p.position.copy(origin);
+                p.position.x += (Math.random() - 0.5) * 2.0;
+                p.position.z += (Math.random() - 0.5) * 2.0;
+                scene.add(p);
+
+                particlesList.push({
+                    mesh: p,
+                    type: 'burst',
+                    vel: new THREE.Vector3((Math.random() - 0.5) * 0.07, 0.05 + Math.random() * 0.06, (Math.random() - 0.5) * 0.07),
+                    life: 1.0
+                });
+            }
+        }
+
+        /**
+         * PRESETS DE CÂMERA ORBITAL SUAVE
+         */
+        function setCameraPreset(preset) {
+            playSound('click');
+            if (preset === 'overview') {
+                cameraAnim = {
+                    pos: new THREE.Vector3(11.5, 11.5, 13.5),
+                    target: new THREE.Vector3(0.2, 0.6, 0.2)
+                };
+            } else if (preset === 'interior') {
+                cameraAnim = {
+                    pos: new THREE.Vector3(-1.5, 8.8, 7.8),
+                    target: new THREE.Vector3(-2.0, 0.8, -1.0)
+                };
+            } else if (preset === 'yard') {
+                cameraAnim = {
+                    pos: new THREE.Vector3(10.8, 7.6, 7.2),
+                    target: new THREE.Vector3(4.2, 0.7, 0.5)
+                };
+            }
+        }
+
+        /**
+         * EVENTOS DE PONTEIRO (RAYCASTING NA PLANTA 3D)
+         */
+        function setupPointerEvents(domElement) {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            const tooltip = document.getElementById('hover-tooltip');
+            const tooltipText = document.getElementById('hover-tooltip-text');
+            let downPos = { x: 0, y: 0 };
+
+            domElement.addEventListener('pointerdown', (e) => {
+                downPos = { x: e.clientX, y: e.clientY };
+                cameraAnim = null;
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                const rect = domElement.getBoundingClientRect();
+                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(interactiveMeshes, false);
+
+                if (hits.length > 0) {
+                    const catId = hits[0].object.userData.categoryId;
+                    const cat = UPGRADE_CATEGORIES.find(c => c.id === catId);
+                    if (cat) {
+                        domElement.style.cursor = 'pointer';
+                        tooltip.style.left = `${e.clientX}px`;
+                        tooltip.style.top = `${e.clientY}px`;
+                        tooltipText.textContent = `${cat.icon} [${cat.pillar}] ${cat.name}`;
+                        tooltip.classList.remove('hidden');
+                        if (gameState.hoveredCategory !== catId) {
+                            gameState.hoveredCategory = catId;
+                            highlightSector3D(catId);
+                        }
+                        return;
+                    }
+                }
+                domElement.style.cursor = 'grab';
+                tooltip.classList.add('hidden');
+                if (gameState.hoveredCategory !== null) {
+                    gameState.hoveredCategory = null;
+                    highlightSector3D(gameState.selectedCategory);
+                }
+            });
+
+            domElement.addEventListener('pointerup', (e) => {
+                const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+                if (dist < 6) {
+                    const rect = domElement.getBoundingClientRect();
+                    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+                    raycaster.setFromCamera(mouse, camera);
+                    const hits = raycaster.intersectObjects(interactiveMeshes, false);
+                    if (hits.length > 0) {
+                        const catId = hits[0].object.userData.categoryId;
+                        focusShopCategory(catId);
+                    }
+                }
+            });
+        }
+
+        function focusShopCategory(catId) {
+            playSound('click');
+            gameState.activeTab = 'all';
+            gameState.selectedCategory = catId;
+            setGlossaryByCategory(catId);
+            highlightSector3D(catId);
+            renderTabs();
+            renderShop();
+            const cardEl = document.getElementById(`shop-card-${catId}`);
+            if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('three-container');
+            if (!container || !renderer || !camera) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        /**
+         * ============================================================================
+         * 4. LOOP DE ANIMAÇÃO 3D (GOTEIRAS, FAÍSCAS, MOSCAS, CHUVA E ANEL LUMINOSO)
+         * ============================================================================
+         */
+        const clock = new THREE.Clock();
+
+        function animateLoop() {
+            requestAnimationFrame(animateLoop);
+            const elapsed = clock.getElapsedTime();
+
+            if (cameraAnim) {
+                camera.position.lerp(cameraAnim.pos, 0.08);
+                controls.target.lerp(cameraAnim.target, 0.08);
+                if (camera.position.distanceTo(cameraAnim.pos) < 0.08) cameraAnim = null;
+            }
+            controls.update();
+
+            // Pulso do anel luminoso 3D
+            if (highlightRingMesh && highlightRingMesh.visible) {
+                highlightRingMesh.material.opacity = 0.55 + Math.sin(elapsed * 5) * 0.3;
+            }
+
+            // Lâmpada piscando na rede elétrica precária
+            if (flickeringBulbMesh) {
+                const flicker = Math.sin(elapsed * 24) * Math.cos(elapsed * 15) > 0.25 ? 0.95 : 0.15;
+                flickeringBulbMesh.material.emissiveIntensity = flicker;
+                roomLightMain.intensity = 0.2 + flicker * 0.35;
+            }
+
+            // Goteiras no telhado furado
+            if (dripPositions.length > 0 && Math.random() < 0.09) {
+                const origin = dripPositions[Math.floor(Math.random() * dripPositions.length)];
+                const drop = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.04, 6, 6),
+                    new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+                );
+                drop.position.copy(origin);
+                scene.add(drop);
+                particlesList.push({ mesh: drop, type: 'drip', velY: -0.06 });
+            }
+
+            // Faíscas na fiação desencapada
+            if (sparkPositions.length > 0 && Math.random() < 0.05) {
+                const origin = sparkPositions[0];
+                const spark = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.06, 0.06, 0.06),
+                    new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+                );
+                spark.position.copy(origin);
+                scene.add(spark);
+                particlesList.push({
+                    mesh: spark,
+                    type: 'burst',
+                    vel: new THREE.Vector3((Math.random() - 0.5) * 0.06, -0.02 - Math.random() * 0.03, (Math.random() - 0.5) * 0.06),
+                    life: 0.65
+                });
+            }
+
+            // Moscas orbitando o lixo acumulado antes da coleta
+            if (flyCenters.length > 0 && Math.random() < 0.08 && particlesList.length < 70) {
+                const center = flyCenters[0];
+                const fly = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.035, 4, 4),
+                    new THREE.MeshBasicMaterial({ color: 0x0f172a })
+                );
+                fly.position.copy(center);
+                scene.add(fly);
+                particlesList.push({
+                    mesh: fly,
+                    type: 'fly',
+                    center: center.clone(),
+                    angle: Math.random() * Math.PI * 2,
+                    life: 1.5
+                });
+            }
+
+            // Atualização das partículas
+            for (let i = particlesList.length - 1; i >= 0; i--) {
+                const p = particlesList[i];
+                if (p.type === 'drip') {
+                    p.mesh.position.y += p.velY;
+                    if (p.mesh.position.y <= 0.1) {
+                        scene.remove(p.mesh);
+                        particlesList.splice(i, 1);
+                    }
+                } else if (p.type === 'burst') {
+                    p.mesh.position.add(p.vel);
+                    p.life -= 0.035;
+                    p.mesh.material.opacity = Math.max(0, p.life);
+                    if (p.life <= 0) {
+                        scene.remove(p.mesh);
+                        particlesList.splice(i, 1);
+                    }
+                } else if (p.type === 'fly') {
+                    p.angle += 0.18;
+                    p.life -= 0.02;
+                    p.mesh.position.x = p.center.x + Math.cos(p.angle) * 0.55;
+                    p.mesh.position.z = p.center.z + Math.sin(p.angle * 1.3) * 0.55;
+                    p.mesh.position.y = p.center.y + Math.sin(p.angle * 2) * 0.2;
+                    if (p.life <= 0) {
+                        scene.remove(p.mesh);
+                        particlesList.splice(i, 1);
+                    }
+                }
+            }
+
+            // Chuva 3D durante simulação climática
+            if (gameState.isRaining) {
+                for (let i = 0; i < rainMeshes.length; i++) {
+                    const r = rainMeshes[i];
+                    r.position.y -= 0.32;
+                    r.position.x -= 0.05;
+                    if (r.position.y < 0) {
+                        r.position.y = 7 + Math.random() * 3;
+                        r.position.x = (Math.random() - 0.5) * 18;
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        /**
+         * ============================================================================
+         * 5. SIMULAÇÃO DE TEMPESTADE & CHUVA 3D COM TROVÕES
+         * ============================================================================
+         */
+        function triggerWeatherTest() {
+            if (gameState.isRaining) return;
+            gameState.isRaining = true;
+            playSound('storm');
+
+            const btn = document.getElementById('btn-rain-test');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⚡</span><span class="hidden sm:inline">Tempestade em Curso...</span>';
+
+            scene.background = new THREE.Color(0x1e293b);
+            scene.fog.color = new THREE.Color(0x1e293b);
+            sunLight.intensity = 0.22;
+            ambientLight.intensity = 0.32;
+
+            // Clarão de relâmpago no céu
+            setTimeout(() => {
+                scene.background = new THREE.Color(0xf8fafc);
+                sunLight.intensity = 2.4;
+                setTimeout(() => {
+                    scene.background = new THREE.Color(0x1e293b);
+                    sunLight.intensity = 0.22;
+                }, 110);
+            }, 620);
+
+            const rainGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.42, 4);
+            const rainMat = new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.65 });
+            for (let i = 0; i < 200; i++) {
+                const drop = new THREE.Mesh(rainGeo, rainMat);
+                drop.position.set((Math.random() - 0.5) * 18, Math.random() * 9, (Math.random() - 0.5) * 15);
+                drop.rotation.z = 0.15;
+                scene.add(drop);
+                rainMeshes.push(drop);
+            }
+
+            const issues = [];
+            if (gameState.levels.space === 0) issues.push('goteiras no telhado com buracos');
+            if (gameState.levels.drainage === 0) issues.push('enxurrada e poças no quintal sem drenagem');
+            if (gameState.levels.electricity === 0) issues.push('risco de curto-circuito nos fios soltos');
+            if (gameState.levels.ventilation === 0) issues.push('lama no piso de terra');
+
+            setTimeout(() => {
+                if (issues.length === 0) {
+                    showToast('☀️ Muito bem! O telhado e a drenagem da chuva seguraram a tempestade.', 'success');
+                } else {
+                    showToast(`⚠️ A chuva mostrou problemas: ${issues.join(', ')}.`, 'error');
+                }
+            }, 1100);
+
+            setTimeout(() => {
+                rainMeshes.forEach(r => scene.remove(r));
+                rainMeshes = [];
+                scene.background = new THREE.Color(0xdbeafe);
+                scene.fog.color = new THREE.Color(0xdbeafe);
+                sunLight.intensity = 0.95;
+                ambientLight.intensity = 0.62;
+
+                btn.disabled = false;
+                btn.innerHTML = '<span>⛈️</span><span class="hidden sm:inline">Testar Tempestade & Chuva</span>';
+                gameState.isRaining = false;
+            }, 3900);
+        }
+
+        /**
+         * ============================================================================
+         * 6. INTERFACE DA LOJA (ABAS, CARTÕES, DESFAZER ÚLTIMA E LAUDO FINAL)
+         * ============================================================================
+         */
+        function renderTabs() {
+            const tabsEl = document.getElementById('category-tabs');
+            tabsEl.innerHTML = '';
+
+            PILLAR_TABS.forEach(tab => {
+                const isActive = gameState.activeTab === tab.id;
+                const btn = document.createElement('button');
+                btn.onclick = () => {
+                    playSound('click');
+                    gameState.activeTab = tab.id;
+                    renderTabs();
+                    renderShop();
+                };
+                btn.className = `px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition ${
+                    isActive
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
+                }`;
+                btn.textContent = tab.label;
+                tabsEl.appendChild(btn);
+            });
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-categories');
+            container.innerHTML = '';
+
+            let upgradedCount = 0;
+            UPGRADE_CATEGORIES.forEach(c => {
+                if (gameState.levels[c.id] > 0) upgradedCount++;
+            });
+            document.getElementById('upgrades-count-badge').textContent = `${upgradedCount}/8`;
+
+            const filtered = gameState.activeTab === 'all'
+                ? UPGRADE_CATEGORIES
+                : UPGRADE_CATEGORIES.filter(c => c.pillar === gameState.activeTab);
+
+            filtered.forEach(cat => {
+                const currentLevel = gameState.levels[cat.id];
+                const currentOpt = cat.options.find(o => o.level === currentLevel);
+                const isHighlighted = gameState.selectedCategory === cat.id;
+
+                const card = document.createElement('div');
+                card.id = `shop-card-${cat.id}`;
+                card.onmouseenter = () => highlightSector3D(cat.id);
+                card.onmouseleave = () => highlightSector3D(gameState.selectedCategory);
+
+                card.className = `rounded-2xl p-3 border transition-all ${
+                    isHighlighted
+                        ? 'ring-2 ring-amber-500 bg-amber-50/70 border-amber-300'
+                        : currentLevel === 2
+                        ? 'bg-emerald-50/60 border-emerald-200'
+                        : currentLevel === 1
+                        ? 'bg-amber-50/40 border-amber-200'
+                        : 'bg-slate-50/90 border-slate-200'
+                }`;
+
+                let headerHTML = `
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="flex items-start gap-2">
+                            <span class="text-lg mt-0.5">${cat.icon}</span>
+                            <div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">${cat.pillar}</span>
+                                    <h3 class="font-display font-extrabold text-xs sm:text-sm text-slate-800 leading-tight">${cat.name}</h3>
+                                </div>
+                                <p class="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                    ${currentLevel === 0 ? cat.problemDesc : `Instalado: <strong class="text-slate-700">${currentOpt.title}</strong>`}
+                                </p>
+                            </div>
+                        </div>
+                        ${currentLevel > 0 ? `
+                            <button onclick="refundCategory('${cat.id}')" title="Reembolsar este módulo"
+                                class="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-red-200 transition active:scale-95">
+                                ↩ +${currentOpt.cost}
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+
+                let optionsHTML = `<div class="grid grid-cols-2 gap-1.5">`;
+                cat.options.forEach(opt => {
+                    const isSelected = currentLevel === opt.level;
+                    const currentCost = currentOpt ? currentOpt.cost : 0;
+                    const netCost = opt.cost - currentCost;
+                    const canAfford = gameState.budget >= netCost;
+
+                    let btnClass = '';
+                    let priceLabel = '';
+
+                    if (isSelected) {
+                        btnClass = 'bg-emerald-600 text-white border-emerald-700 cursor-default';
+                        priceLabel = '✓ Ativo';
+                    } else if (canAfford) {
+                        btnClass = 'bg-amber-50/70 hover:bg-amber-100 text-slate-800 border-amber-400 shadow-sm cursor-pointer active:scale-[0.98]';
+                        priceLabel = netCost > 0 ? `Clicar • 💰 ${netCost}` : `↩ +${Math.abs(netCost)}`;
+                    } else {
+                        btnClass = 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-75';
+                        priceLabel = `💰 ${netCost}`;
+                    }
+
+                    // Tags de impacto técnico
+                    const tags = [];
+                    if (opt.elec > 0) tags.push(`⚡+${opt.elec}`);
+                    if (opt.san > 0) tags.push(`💧+${opt.san}`);
+                    if (opt.space > 0) tags.push(`📐+${opt.space}`);
+                    if (opt.comfort > 0) tags.push(`🛋️+${opt.comfort}`);
+
+                    optionsHTML += `
+                        <button ${isSelected ? 'disabled' : `onclick="selectUpgrade('${cat.id}', ${opt.level})"`}
+                            title="${opt.desc}"
+                            class="text-left p-2 rounded-xl border transition flex flex-col justify-between ${btnClass}">
+                            <div>
+                                <div class="flex items-center justify-between gap-1 mb-0.5">
+                                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
+                                        isSelected ? 'bg-emerald-700 text-emerald-100' : opt.level === 2 ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'
+                                    }">
+                                        Nível ${opt.level}
+                                    </span>
+                                    <span class="text-[11px] font-extrabold ${isSelected ? 'text-emerald-100' : canAfford ? 'text-amber-700' : 'text-red-400'}">
+                                        ${priceLabel}
+                                    </span>
+                                </div>
+                                <div class="font-bold text-[11px] leading-tight my-1">${opt.title}</div>
+                                <p class="text-[10px] leading-tight ${isSelected ? 'text-emerald-100/90' : 'text-slate-500'} line-clamp-2 mb-1.5">${opt.desc}</p>
+                            </div>
+                            <div class="flex items-center flex-wrap gap-1.5 text-[9px] font-bold ${isSelected ? 'text-emerald-100' : 'text-slate-600'} pt-1 border-t ${isSelected ? 'border-emerald-500/40' : 'border-slate-100'}">
+                                ${tags.map(t => `<span>${t}</span>`).join('')}
+                            </div>
+                        </button>
+                    `;
+                });
+                optionsHTML += `</div>`;
+
+                card.innerHTML = headerHTML + optionsHTML;
+                container.appendChild(card);
+            });
+        }
+
+        function selectUpgrade(categoryId, targetLevel) {
+            const category = UPGRADE_CATEGORIES.find(c => c.id === categoryId);
+            const targetOpt = category.options.find(o => o.level === targetLevel);
+            const prevLevel = gameState.levels[categoryId];
+            const prevOpt = category.options.find(o => o.level === prevLevel);
+
+            const prevCost = prevOpt ? prevOpt.cost : 0;
+            const netCost = targetOpt.cost - prevCost;
+
+            if (gameState.budget < netCost) {
+                playSound('error');
+                const badge = document.getElementById('wallet-badge');
+                badge.classList.add('scale-105', 'border-red-500');
+                setTimeout(() => badge.classList.remove('scale-105', 'border-red-500'), 350);
+                showToast(`Orçamento insuficiente! Faltam ${netCost - gameState.budget} moedas.`, 'error');
+                return;
+            }
+
+            // Salva no histórico para "Desfazer Última"
+            gameState.history.push({
+                categoryId,
+                prevLevel,
+                newLevel: targetLevel,
+                costDiff: netCost
+            });
+
+            gameState.budget -= netCost;
+            gameState.levels[categoryId] = targetLevel;
+            gameState.selectedCategory = categoryId;
+
+            playSound('build');
+            rebuild3DHouse(true, categoryId);
+            updateHUD();
+            showToast(`${category.icon} ${targetOpt.title} instalado!`, 'success');
+        }
+
+        function undoLastAction() {
+            if (gameState.history.length === 0) return;
+            const last = gameState.history.pop();
+            gameState.levels[last.categoryId] = last.prevLevel;
+            gameState.budget += last.costDiff;
+            gameState.selectedCategory = last.categoryId;
+
+            playSound('refund');
+            rebuild3DHouse(false);
+            highlightSector3D(last.categoryId);
+            updateHUD();
+            showToast(`Última ação desfeita (${last.costDiff >= 0 ? '+' + last.costDiff : last.costDiff} moedas).`, 'info');
+        }
+
+        function refundCategory(categoryId) {
+            const currentLevel = gameState.levels[categoryId];
+            if (currentLevel === 0) return;
+
+            const category = UPGRADE_CATEGORIES.find(c => c.id === categoryId);
+            const currentOpt = category.options.find(o => o.level === currentLevel);
+
+            gameState.history.push({
+                categoryId,
+                prevLevel: currentLevel,
+                newLevel: 0,
+                costDiff: -currentOpt.cost
+            });
+
+            gameState.budget += currentOpt.cost;
+            gameState.levels[categoryId] = 0;
+
+            playSound('refund');
+            rebuild3DHouse(false);
+            updateHUD();
+            showToast(`Módulo ${category.name} revertido. +${currentOpt.cost} moedas.`, 'info');
+        }
+
+        function calculateMetrics() {
+            let elec = 10, san = 10, space = 10, comfort = 10;
+
+            UPGRADE_CATEGORIES.forEach(cat => {
+                const lvl = gameState.levels[cat.id];
+                if (lvl > 0) {
+                    const opt = cat.options.find(o => o.level === lvl);
+                    elec += opt.elec;
+                    san += opt.san;
+                    space += opt.space;
+                    comfort += opt.comfort;
+                }
+            });
+
+            elec = Math.min(100, Math.round(elec));
+            san = Math.min(100, Math.round(san));
+            space = Math.min(100, Math.round(space));
+            comfort = Math.min(100, Math.round(comfort));
+
+            const average = Math.round((elec + san + space + comfort) / 4);
+            return { elec, san, space, comfort, average };
+        }
+
+        function updateHUD() {
+            document.getElementById('budget-display').textContent = gameState.budget.toLocaleString('pt-BR');
+            document.getElementById('btn-undo').disabled = gameState.history.length === 0;
+
+            const m = calculateMetrics();
+            const scorePill = document.getElementById('panel-score-pill');
+            if (scorePill) {
+                scorePill.textContent = `Nota: ${m.average}/100`;
+                if (m.average < 35) {
+                    scorePill.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-700';
+                } else if (m.average < 62) {
+                    scorePill.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
+                } else if (m.average < 78) {
+                    scorePill.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800';
+                } else {
+                    scorePill.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+                }
+            }
+
+            // Desktop
+            document.getElementById('val-elec').textContent = `${m.elec}%`;
+            document.getElementById('bar-elec').style.width = `${m.elec}%`;
+            document.getElementById('val-san').textContent = `${m.san}%`;
+            document.getElementById('bar-san').style.width = `${m.san}%`;
+            document.getElementById('val-space').textContent = `${m.space}%`;
+            document.getElementById('bar-space').style.width = `${m.space}%`;
+            document.getElementById('val-comfort').textContent = `${m.comfort}%`;
+            document.getElementById('bar-comfort').style.width = `${m.comfort}%`;
+
+            // Mobile
+            document.getElementById('val-elec-m').textContent = `${m.elec}%`;
+            document.getElementById('bar-elec-m').style.width = `${m.elec}%`;
+            document.getElementById('val-san-m').textContent = `${m.san}%`;
+            document.getElementById('bar-san-m').style.width = `${m.san}%`;
+            document.getElementById('val-space-m').textContent = `${m.space}%`;
+            document.getElementById('bar-space-m').style.width = `${m.space}%`;
+            document.getElementById('val-comfort-m').textContent = `${m.comfort}%`;
+            document.getElementById('bar-comfort-m').style.width = `${m.comfort}%`;
+
+            const badge = document.getElementById('overall-status-badge');
+            if (m.average < 35) {
+                badge.textContent = 'Casa Precária';
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700';
+            } else if (m.average < 62) {
+                badge.textContent = 'Em Reforma';
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
+            } else if (m.average < 78) {
+                badge.textContent = 'Casa Funcional';
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800';
+            } else {
+                badge.textContent = '✨ Lar Digno e Seguro';
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+            }
+
+            renderShop();
+        }
+
+        function openEvaluationModal() {
+            const m = calculateMetrics();
+            playSound(m.average >= 68 ? 'fanfare' : 'click');
+
+            document.getElementById('eval-elec').textContent = `${m.elec}%`;
+            document.getElementById('eval-san').textContent = `${m.san}%`;
+            document.getElementById('eval-space').textContent = `${m.space}%`;
+            document.getElementById('eval-comfort').textContent = `${m.comfort}%`;
+            document.getElementById('eval-total-score').textContent = `${m.average} / 100`;
+            document.getElementById('eval-remaining-coins').textContent = `${gameState.budget} moedas`;
+
+            const iconEl = document.getElementById('eval-icon');
+            const titleEl = document.getElementById('eval-title');
+            const subEl = document.getElementById('eval-subtitle');
+
+            if (m.average >= 78) {
+                iconEl.textContent = '🏆';
+                iconEl.className = 'w-16 h-16 mx-auto rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mb-2 shadow-inner';
+                titleEl.textContent = 'Lar Digno, Seguro e Saudável!';
+                subEl.textContent = 'Ótimas escolhas! Você cuidou bem da energia, da água e do esgoto, do espaço e do conforto com 1.000 moedas.';
+            } else if (m.average >= 58) {
+                iconEl.textContent = '🏡';
+                iconEl.className = 'w-16 h-16 mx-auto rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-3xl mb-2 shadow-inner';
+                titleEl.textContent = 'Casa Bem Melhorada, mas Ainda Dá para Avançar';
+                subEl.textContent = 'Várias partes já estão boas, mas alguns pontos ainda precisam de atenção para evitar riscos.';
+            } else {
+                iconEl.textContent = '🚧';
+                iconEl.className = 'w-16 h-16 mx-auto rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-2 shadow-inner';
+                titleEl.textContent = 'A Casa Ainda Tem Riscos à Saúde e Segurança';
+                subEl.textContent = 'Faltam melhorias importantes. Use o botão "Desfazer Última" ou ajuste suas escolhas com as 1.000 moedas.';
+            }
+
+            const list = document.getElementById('eval-feedback-list');
+            list.innerHTML = '';
+
+            // Alertas específicos de vulnerabilidade em linguagem do 6º ano
+            const specificWarnings = {
+                electricity: 'Fios soltos e sem disjuntor: risco de choque elétrico e curto-circuito.',
+                water: 'Sem água encanada: depender só de baldes dificulta a limpeza e a higiene.',
+                sewage: 'Esgoto aberto no quintal: sujeira exposta aumenta o risco de doenças.',
+                drainage: 'Sem drenagem para a chuva: água parada e lama podem molhar a base da casa.',
+                waste: 'Lixo espalhado: atrai moscas, baratas e outros animais indesejados.',
+                space: 'Sem divisão de quarto e com goteiras no telhado: menos privacidade e abrigo.',
+                ventilation: 'Chão de terra úmido e janela fechada: deixa o ar pesado e o ambiente escuro.',
+                furniture: 'Faltam móveis básicos como cama com estrado e mesa para o dia a dia.'
+            };
+
+            UPGRADE_CATEGORIES.forEach(cat => {
+                const lvl = gameState.levels[cat.id];
+                const opt = cat.options.find(o => o.level === lvl);
+                const li = document.createElement('li');
+                li.className = 'flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80';
+
+                if (lvl === 2) {
+                    li.innerHTML = `<span class="text-emerald-600 font-bold">✔</span><div><strong class="text-slate-800">[${cat.pillar}] ${cat.name}:</strong> Nível 2 completo (${opt.title}).</div>`;
+                } else if (lvl === 1) {
+                    li.innerHTML = `<span class="text-amber-600 font-bold">●</span><div><strong class="text-slate-800">[${cat.pillar}] ${cat.name}:</strong> Nível 1 pronto (${opt.title}). Já ajuda bastante!</div>`;
+                } else {
+                    li.innerHTML = `<span class="text-red-600 font-bold">✖</span><div><strong class="text-red-800">[${cat.pillar}] ${cat.name}:</strong> ${specificWarnings[cat.id]}</div>`;
+                }
+                list.appendChild(li);
+            });
+
+            if (gameState.budget >= 70) {
+                const li = document.createElement('li');
+                li.className = 'flex items-start gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950';
+                li.innerHTML = `<span class="font-bold">💡</span><span>Dica: ainda sobraram <strong>${gameState.budget} moedas</strong> que você pode usar para melhorar mais uma parte da casa!</span>`;
+                list.appendChild(li);
+            }
+
+            const modal = document.getElementById('evaluation-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEvaluationModal() {
+            const modal = document.getElementById('evaluation-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function resetGame() {
+            gameState = {
+                budget: INITIAL_BUDGET,
+                levels: {
+                    electricity: 0,
+                    water: 0,
+                    sewage: 0,
+                    drainage: 0,
+                    waste: 0,
+                    space: 0,
+                    ventilation: 0,
+                    furniture: 0
+                },
+                history: [],
+                activeTab: 'all',
+                selectedCategory: null,
+                hoveredCategory: null,
+                isRaining: false
+            };
+            highlightSector3D(null);
+            playSound('refund');
+            rebuild3DHouse(false);
+            renderTabs();
+            updateHUD();
+            showToast('Simulação reiniciada com 1.000 moedas.', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-900/95 text-emerald-50 border-emerald-600',
+                error: 'bg-red-900/95 text-red-50 border-red-600',
+                info: 'bg-slate-900/95 text-slate-100 border-slate-600'
+            };
+            toast.className = `px-4 py-2 rounded-2xl border shadow-xl text-xs font-semibold text-center backdrop-blur-md transition-all duration-300 ${colors[type]}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-8px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2600);
+        }
+
+        function switchSitePage(pageName) {
+            playSound('click');
+            const pages = {
+                game: document.getElementById('page-game'),
+                guide: document.getElementById('page-guide'),
+                about: document.getElementById('page-about')
+            };
+            const tabs = {
+                game: document.getElementById('nav-tab-game'),
+                guide: document.getElementById('nav-tab-guide'),
+                about: document.getElementById('nav-tab-about')
+            };
+
+            Object.keys(pages).forEach(key => {
+                if (pages[key]) {
+                    pages[key].classList.toggle('hidden', key !== pageName);
+                }
+                if (tabs[key]) {
+                    if (key === pageName) {
+                        tabs[key].className = 'px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 transition active:scale-95';
+                    } else {
+                        tabs[key].className = 'px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition active:scale-95';
+                    }
+                }
+            });
+
+            if (pageName === 'game') {
+                setTimeout(onWindowResize, 50);
+            }
+        }
+
+        window.onload = function () {
+            initThreeJS();
+            renderTabs();
+            updateHUD();
+            animateLoop();
+        };
+    </script>
+</body>
+</html>
